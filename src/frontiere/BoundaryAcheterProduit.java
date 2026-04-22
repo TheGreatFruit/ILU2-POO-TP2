@@ -4,41 +4,58 @@ import controleur.ControlAcheterProduit;
 import personnages.Gaulois;
 
 public class BoundaryAcheterProduit {
-	private ControlAcheterProduit controlAcheterProduit;
+    private ControlAcheterProduit controlAcheterProduit;
 
-	public BoundaryAcheterProduit(ControlAcheterProduit controlAcheterProduit) {
-		this.controlAcheterProduit = controlAcheterProduit;
-	}
+    public BoundaryAcheterProduit(ControlAcheterProduit controlAcheterProduit) {
+        this.controlAcheterProduit = controlAcheterProduit;
+    }
 
-	public void acheterProduit(String nomAcheteur) {
-		StringBuilder chaine = new StringBuilder();
+    public void acheterProduit(String nomAcheteur) {
+        // Vérification de l'identité
+        if (!controlAcheterProduit.verifIdentite(nomAcheteur)) {
+            System.out.println("Je suis désolée " + nomAcheteur
+                    + " mais il faut être un habitant de notre village pour commercer ici.");
+            return;
+        }
 
-		if (!controlAcheterProduit.verifIdentite(nomAcheteur)) {
-			chaine.append("Je suis désolée " + nomAcheteur
-					+ " mais il faut être un habitant de notre village pour commercer ici.\n");
-		} else {
-			chaine.append("Quel produit voulez-vous acheter ?\n");
-			String produit = Clavier.entrerChaine(chaine.toString());
+        // Demande du produit
+        String produit = Clavier.entrerChaine("Quel produit voulez-vous acheter ?\n");
+        Gaulois[] listeVendeursProduit = controlAcheterProduit.trouverEtalsProduit(produit);
 
-			chaine.setLength(0);
-			chaine.append("Chez quel commerçant voulez-vous acheter des " + produit + " ?\n");
-			Gaulois[] listeVendeursProduit = controlAcheterProduit.trouverEtalsProduit(produit);
-			for (int i = 0; i < listeVendeursProduit.length; i++) {
-				chaine.append(i+1 + " - " + listeVendeursProduit[i].getNom() + "\n");
-			}
+        // Cas où personne ne vend le produit
+        if (listeVendeursProduit == null || listeVendeursProduit.length == 0) {
+            System.out.println("Désolé, personne ne vend ce produit au marché.");
+            return;
+        }
 
-			int numVendeur = Clavier.entrerEntier(chaine.toString())-1;
-			String nomVendeur = listeVendeursProduit[numVendeur].getNom();
+        // Construction de la liste des vendeurs
+        StringBuilder chaine = new StringBuilder();
+        chaine.append("Chez quel commerçant voulez-vous acheter des ").append(produit).append(" ?\n");
+        for (int i = 0; i < listeVendeursProduit.length; i++) {
+            chaine.append(i + 1).append(" - ").append(listeVendeursProduit[i].getNom()).append("\n");
+        }
 
-			chaine = new StringBuilder();
-			chaine.append(nomAcheteur + " se déplace jusqu'à l'étal du vendeur " + nomVendeur + ".\n");
-			chaine.append("Bonjour " + nomAcheteur + "\n");
+        // Sélection du vendeur
+        int numVendeur = Clavier.entrerEntier(chaine.toString()) - 1;
+        String nomVendeur = listeVendeursProduit[numVendeur].getNom();
 
-			System.out.println(chaine.toString());
-		}
-	}
-	
-	
-	
-	
+        System.out.println(nomAcheteur + " se déplace jusqu'à l'étal du vendeur " + nomVendeur);
+        System.out.println("Bonjour " + nomAcheteur);
+
+        // Demande de la quantité et exécution de l'achat
+        int quantiteDemandee = Clavier.entrerEntier("Combien de " + produit + " voulez-vous acheter ?\n");
+        int quantiteAchetee = controlAcheterProduit.acheterProduit(nomVendeur, quantiteDemandee);
+
+        // Affichage des résultats selon la disponibilité du stock
+        if (quantiteAchetee == 0) {
+            System.out.println(nomAcheteur + " veut acheter " + quantiteDemandee + " " + produit
+                    + ", malheureusement il n'y en a plus !");
+        } else if (quantiteAchetee < quantiteDemandee) {
+            System.out.println(nomAcheteur + " veut acheter " + quantiteDemandee + " " + produit
+                    + ", malheureusement " + nomVendeur + " n'en a plus que " + quantiteAchetee + ".");
+            System.out.println(nomAcheteur + " achète tout le stock de " + nomVendeur + ".");
+        } else {
+            System.out.println(nomAcheteur + " achète " + quantiteAchetee + " " + produit + " à " + nomVendeur + ".");
+        }
+    }
 }
